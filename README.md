@@ -41,3 +41,6 @@ We included a placeholder template at `templates/base_template.docx` (copied fro
 ## Notes
 - Built with `python-docx` for DOCX generation, `pandas` + `xlsxwriter` for Excel export.
 - You can import/export XLSX to edit data offline.
+
+
+**Template:** The app now ships with a built-in template at `templates/pcs_built_in_template.docx` (no upload required). You can still upload your own to override.
