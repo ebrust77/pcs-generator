@@ -149,61 +149,57 @@ if gen:
     xlsx_buf.seek(0)
     st.download_button("Download XLSX", data=xlsx_buf, file_name=f"PCS_Tables_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-    # Export to DOCX (append sections to template)
+    # Export to DOCX (anchored sections)
     replacements = {
         "[PRODUCT NAME]": product_name,
-        "PRODUCT NAME": product_name  # catch-all basic replacement if template uses plain text
+        "PRODUCT NAME": product_name,
+        "[DATE]": datetime.now().strftime("%Y-%m-%d")
     }
-    # Build sections
-    # Build detailed sections (anchored to the built-in template headings)
-from pcs_generator import make_per_unitop_param_tables, make_unitop_narrative
-from docx_utils import save_docx_with_sections
 
-sections = []
+    from pcs_generator import make_per_unitop_param_tables, make_unitop_narrative
+    sections = []
 
-# QTPP
-sections.append({"kind":"table","anchor":"1. Quality Target Product Profile (QTPP)",
-                 "title":"QTPP", "content": qtpp_df})
+    # QTPP
+    sections.append({"kind":"table","anchor":"1. Quality Target Product Profile (QTPP)",
+                     "title":"QTPP", "content": qtpp_df})
 
-# CQAs
-sections.append({"kind":"table","anchor":"2. Critical Quality Attributes (CQAs)",
-                 "title":"CQAs & Methods", "content": cqas_df})
+    # CQAs
+    sections.append({"kind":"table","anchor":"2. Critical Quality Attributes (CQAs)",
+                     "title":"CQAs & Methods", "content": cqas_df})
 
-# Unit Ops overview
-sections.append({"kind":"table","anchor":"3. Process Overview & Unit Operations",
-                 "title":"Unit Operations", "content": uops_df})
+    # Unit Ops overview
+    sections.append({"kind":"table","anchor":"3. Process Overview & Unit Operations",
+                     "title":"Unit Operations", "content": uops_df})
 
-# Parameters grouped by UnitOp
-from pcs_generator import make_per_unitop_param_tables
-for subtitle, df in make_per_unitop_param_tables(uops_df, params_df):
-    sections.append({"kind":"table","anchor":"4. Parameters & Controls",
-                     "title": subtitle, "content": df})
+    # Parameters grouped by UnitOp
+    for subtitle, df in make_per_unitop_param_tables(uops_df, params_df):
+        sections.append({"kind":"table","anchor":"4. Parameters & Controls",
+                         "title": subtitle, "content": df})
 
-# Control Strategy Matrix
-sections.append({"kind":"table","anchor":"5. Control Strategy Matrix (Unit Operation × CQA)",
-                 "title":"Control Strategy Matrix", "content": control_matrix})
+    # Control Strategy Matrix
+    sections.append({"kind":"table","anchor":"5. Control Strategy Matrix (Unit Operation × CQA)",
+                     "title":"Control Strategy Matrix", "content": control_matrix})
 
-# CPP / IPC mapping
-sections.append({"kind":"table","anchor":"6. CPP / IPC Mapping",
-                 "title":"CPP / IPC Mapping", "content": cpp_ipc})
+    # CPP / IPC mapping
+    sections.append({"kind":"table","anchor":"6. CPP / IPC Mapping",
+                     "title":"CPP / IPC Mapping", "content": cpp_ipc})
 
-# Acceptance criteria
-sections.append({"kind":"table","anchor":"7. Acceptance Criteria (Phase-Appropriate)",
-                 "title": f"Acceptance – {phase}", "content": accept})
+    # Acceptance criteria
+    sections.append({"kind":"table","anchor":"7. Acceptance Criteria (Phase-Appropriate)",
+                     "title": f"Acceptance – {phase}", "content": accept})
 
-# Per-Unit Operation Narrative
-for u in uops_df["UnitOp"].dropna().unique().tolist():
-    narrative = make_unitop_narrative(u, uops_df, params_df, mapping_df)
-    sections.append({"kind":"text","anchor":"8. Per-Unit Operation Narrative",
-                     "title": u, "content": narrative})
+    # Per-Unit Operation Narrative
+    for u in uops_df["UnitOp"].dropna().unique().tolist():
+        narrative = make_unitop_narrative(u, uops_df, params_df, mapping_df)
+        sections.append({"kind":"text","anchor":"8. Per-Unit Operation Narrative",
+                         "title": u, "content": narrative})
 
-# Phase-Appropriate Justifications
-sections.append({"kind":"text","anchor":"9. Phase-Appropriate Justifications",
-                 "title": f"Justification – {phase}", "content": f"Phase: {phase}\n\n{just}"})
+    # Phase-Appropriate Justifications
+    sections.append({"kind":"text","anchor":"9. Phase-Appropriate Justifications",
+                     "title": f"Justification – {phase}", "content": f"Phase: {phase}\n\n{just}"})
 
-# Save docx to memory then offer download
-tmp_out = Path("PCS_Output.docx")
-save_docx_with_sections(str(template_path), str(tmp_out), replacements, sections)
+    tmp_out = Path("PCS_Output.docx")
+    save_docx_with_sections(str(template_path), str(tmp_out), replacements, sections)
     with open(tmp_out, "rb") as f:
         docx_bytes = f.read()
     st.download_button("Download DOCX", data=docx_bytes, file_name=f"PCS_{product_name.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
